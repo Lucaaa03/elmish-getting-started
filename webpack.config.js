@@ -1,26 +1,18 @@
-const path = require("path")
+"use strict";
+
+const path = require("node:path")
 
 module.exports = {
     mode: "development",
-    entry: "./src/App.fsproj",
-    devtool: "eval-source-map",
+    entry: "./build/App.js",
+
+    output: {
+        path: path.join(__dirname, "./dist"),
+        filename: "main.js",
+    },
 
     devServer: {
-        devMiddleware: {
-            publicPath: "/"
-        },
-        port: 8080,
-        proxy: undefined,
-        hot: true,
-        static: {
-            directory: path.resolve(__dirname, "./dist"),
-            staticOptions: {},
-        },
+        static: path.join(__dirname, "./dist"),
+        open: true,
     },
-    module: {
-        rules: [{
-            test: /\.fs(x|proj)?$/,
-            use: "fable-loader"
-        }]
-    }
-}
+};
