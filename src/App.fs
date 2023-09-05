@@ -36,6 +36,7 @@ let render (state: State) (dispatch: Msg -> unit) =
   Html.div [
     Html.button [
       prop.onClick (fun _ -> dispatch Increment)
+      prop.classes [ "button"; "is-primary" ]
       prop.text "+"
     ]
 
@@ -43,6 +44,7 @@ let render (state: State) (dispatch: Msg -> unit) =
 
     Html.button [
       prop.onClick (fun _ -> dispatch Decrement)
+      prop.classes [ "button"; "is-danger" ]
       prop.text "-"
     ]
 
