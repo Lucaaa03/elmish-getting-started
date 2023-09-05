@@ -71,17 +71,27 @@ module Validated =
   let failure raw : Validated<_> =
     { Raw = raw; Parsed = None }
 
-type State = { NumberInput : Validated<int> }
+type State = {
+  NumberInput : Validated<int>
+  Capitalized : bool
+}
 
 type Msg =
   | SetNumberInput of Validated<int>
+  | SetCapitalized of bool
 
-let init() = { NumberInput = Validated.createEmpty() }
+let init() = {
+  NumberInput = Validated.createEmpty()
+  Capitalized = false
+}
 
 let update msg state =
   match msg with
   | SetNumberInput numberInput ->
     { state with NumberInput = numberInput }
+
+  | SetCapitalized value ->
+    { state with Capitalized = value }
 
 let tryParseInt (input: string) : Validated<int>=
   try Validated.success input (int input)
@@ -99,8 +109,28 @@ let render state dispatch =
       prop.style [ style.width 500; style.borderRadius 0; style.padding 20 ]
       prop.onChange (tryParseInt >> SetNumberInput >> dispatch)
     ]
+
+    Html.div [
+      Html.label [
+        prop.htmlFor "checkbox"
+        prop.text "Capitalized"
+      ]
+
+      Html.input [
+        prop.style [ style.marginLeft 5 ]
+        prop.id "checkbox"
+        prop.type'.checkbox
+        prop.isChecked state.Capitalized
+        prop.onChange (SetCapitalized >> dispatch)
+      ]
+    ]
+
     Html.span [
-      prop.text state.NumberInput.Raw
+      prop.text (
+        if state.Capitalized
+        then state.NumberInput.Raw.ToUpper()
+        else state.NumberInput.Raw
+      )
       prop.className "tag"
       prop.style [ style.fontSize 18; style.color (validatedTextColor state.NumberInput) ]
     ]
