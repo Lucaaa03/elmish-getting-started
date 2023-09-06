@@ -136,14 +136,22 @@ open Feliz
 //     ]
 //   ]
 
+type Todo = {
+  ID: int
+  Description: string
+  Completed: bool
+}
+
 type State = {
-  TodoList: string list
+  TodoList: Todo list
   NewTodo: string
 }
 
 type Msg =
   | SetNewTodo of string
   | AddNewTodo
+  | ToggleCompleted of int
+  | DeleteTodo of int
 
 let init() = {
   TodoList = []
@@ -152,14 +160,56 @@ let init() = {
 
 let update msg state =
   match msg with
-  | SetNewTodo todoText -> { state with NewTodo = todoText }
+  | SetNewTodo description ->
+    { state with NewTodo = description }
+
+  | DeleteTodo id ->
+    let nextTodoList =
+      state.TodoList
+      |> List.filter (fun todo -> todo.ID <> id)
+
+    { state with TodoList = nextTodoList }
+
+  | ToggleCompleted id ->
+    let nextTodoList =
+      state.TodoList
+      |> List.map (fun todo ->
+        if todo.ID = id
+        then { todo with Completed = not todo.Completed }
+        else todo)
+
+    { state with TodoList = nextTodoList }
+
   | AddNewTodo when state.NewTodo = "" -> state
-  | AddNewTodo -> { state with NewTodo = ""; TodoList = List.append state.TodoList [ state.NewTodo ] }
+
+  | AddNewTodo ->
+    let nextTodoId =
+      match state.TodoList with
+      | [ ] -> 1
+      | elements ->
+        elements
+        |> List.maxBy (fun todo -> todo.ID)
+        |> fun todo -> todo.ID + 1
+
+    let nextTodo =
+      { ID = nextTodoId
+        Description = state.NewTodo
+        Completed = false }
+
+    { state with
+        NewTodo = ""
+        TodoList = List.append state.TodoList [ nextTodo ] }
 
 let appTitle =
   Html.p [
     prop.className "title"
     prop.text "Elmish Todo List"
+  ]
+
+let div (classes: string list) (children: Fable.React.ReactElement list) =
+  Html.div [
+    prop.classes classes
+    prop.children children
   ]
 
 let inputField state dispatch =
@@ -195,14 +245,43 @@ let inputField state dispatch =
     ]
   ]
 
+let renderTodo (todo: Todo) (dispatch: Msg -> unit) =
+  div [ "box" ] [
+    div [ "columns"; "is-mobile"; "is-vcentered" ] [
+      div [ "column" ] [
+        Html.p [
+          prop.className "subtitle"
+          prop.text todo.Description
+        ]
+      ]
+
+      div [ "column"; "is-narrow" ] [
+        div [ "buttons" ] [
+          Html.button [
+            prop.classes [ "button"; if todo.Completed then "is-success" ]
+            prop.onClick (fun _ -> dispatch (ToggleCompleted todo.ID))
+            prop.children [
+              Html.i [ prop.classes [ "fa"; "fa-check" ] ]
+            ]
+          ]
+
+          Html.button [
+            prop.classes [ "button"; "is-danger" ]
+            prop.onClick (fun _ -> dispatch (DeleteTodo todo.ID))
+            prop.children [
+              Html.i [ prop.classes [ "fa"; "fa-times" ] ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+
 let todoList state dispatch =
   Html.ul [
     prop.children [
       for todo in state.TodoList ->
-        Html.li [
-          prop.classes [ "box"; "subtitle" ]
-          prop.text todo
-        ]
+        renderTodo todo dispatch
     ]
   ]
 
